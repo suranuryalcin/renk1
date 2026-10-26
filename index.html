@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Renk Testi" />
+  <title>Renk Körlüğü Testi</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f1e;
+      color: #eaeaea;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      overscroll-behavior: none;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      position: relative;
+    }
+
+    /* ---- Ekranlar ---- */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 20px;
+      padding-top: calc(20px + env(safe-area-inset-top));
+    }
+    .screen.active { display: flex; }
+
+    /* ---- Giriş ---- */
+    #screen-start {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 24px;
+      background: radial-gradient(circle at 50% 30%, #1e1e3f 0%, #0f0f1e 70%);
+    }
+    #screen-start h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.5px; }
+    #screen-start p { font-size: 0.95rem; color: #a0a0b8; max-width: 340px; line-height: 1.5; }
+    .btn {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 999px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(108, 92, 231, 0.4);
+      transition: transform 0.15s ease;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.5; }
+
+    /* ---- Test ---- */
+    #screen-test { padding-top: calc(10px + env(safe-area-inset-top)); }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      color: #a0a0b8;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: #2a2a45;
+      border-radius: 999px;
+      margin: 0 16px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6c5ce7, #00cec9);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    .test-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      min-height: 0;
+    }
+    .plate-wrap {
+      width: min(78vw, 78vh, 420px);
+      height: min(78vw, 78vh, 420px);
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 0 0 4px #1a1a2e, 0 0 40px rgba(108, 92, 231, 0.25);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .plate-wrap svg { display: block; width: 100%; height: 100%; }
+
+    .instruction {
+      font-size: 0.95rem;
+      color: #c8c8e0;
+      text-align: center;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .answer-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .answer-row input {
+      flex: 1;
+      background: #1e1e3f;
+      border: 2px solid #3a3a5c;
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: #fff;
+      font-size: 1.2rem;
+      text-align: center;
+      outline: none;
+    }
+    .answer-row input:focus { border-color: #6c5ce7; }
+    .answer-row button {
+      background: #6c5ce7;
+      border: none;
+      border-radius: 14px;
+      padding: 0 22px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .answer-row button:active { opacity: 0.8; }
+
+    .tap-hint {
+      font-size: 0.85rem;
+      color: #00cec9;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    /* ---- Sonuç ---- */
+    #screen-result {
+      overflow-y: auto;
+      justify-content: flex-start;
+      gap: 16px;
+      padding-top: calc(24px + env(safe-area-inset-top));
+    }
+    #screen-result h2 { font-size: 1.4rem; text-align: center; }
+    .verdict {
+      text-align: center;
+      padding: 20px;
+      border-radius: 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .verdict.ok { background: rgba(0, 206, 201, 0.15); color: #00cec9; border: 1px solid rgba(0,206,201,0.3); }
+    .verdict.warn { background: rgba(253, 203, 110, 0.12); color: #fdcb6e; border: 1px solid rgba(253,203,110,0.3); }
+    .verdict.bad { background: rgba(255, 118, 117, 0.12); color: #ff7675; border: 1px solid rgba(255,118,117,0.3); }
+
+    .metric {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid #2a2a45;
+    }
+    .metric-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #d0d0e8;
+    }
+    .metric-head .val { font-weight: 700; color: #fff; }
+    .bar-bg { height: 10px; background: #2a2a45; border-radius: 999px; overflow: hidden; }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.8s ease;
+    }
+    .note { font-size: 0.78rem; color: #8888a8; text-align: center; line-height: 1.5; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- GİRİŞ -->
+    <section id="screen-start" class="screen active">
+      <h1>🎨 Renk Körlüğü Testi</h1>
+      <p>10 aşamalı bu testte renk algınızı ölçeceğiz. Her aşama rastgele üretilir; ezberlenemez. Lütfen sessiz ve iyi ışıklı bir ortamda yapın.</p>
+      <button class="btn" id="btn-start">Teste Başla</button>
+      <p class="note">Bu uygulama tıbbi tanı koymaz; yalnızca bilgilendirme amaçlıdır.</p>
+    </section>
+
+    <!-- TEST -->
+    <section id="screen-test" class="screen">
+      <div class="test-header">
+        <span id="step-label">Aşama 1/10</span>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <span id="timer-label">0s</span>
+      </div>
+      <div class="test-body">
+        <div class="plate-wrap"><svg id="plate-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="instruction" id="instruction">Plakadaki sayıyı girin</div>
+        <div class="answer-row" id="answer-row">
+          <input id="answer-input" type="number" inputmode="numeric" min="1" max="99" placeholder="1–99" />
+          <button id="btn-submit">Gönder</button>
+        </div>
+        <div class="tap-hint" id="tap-hint" style="display:none">Farklı renkteki alana dokunun</div>
+      </div>
+    </section>
+
+    <!-- SONUÇ -->
+    <section id="screen-result" class="screen">
+      <h2>Test Sonucu</h2>
+      <div class="verdict ok" id="verdict">Analiz yapılıyor…</div>
+
+      <div class="metric">
+        <div class="metric-head"><span>🟢 Kırmızı–Yeşil</span><span class="val" id="m-rg-val">–</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="m-rg-bar" style="background:#2ecc71"></div></div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-head"><span>🟢 Kırmızı–Yeşil (varyant)</span><span class="val" id="m-rg2-val">–</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="m-rg2-bar" style="background:#27ae60"></div></div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-head"><span>🔵 Mavi–Sarı</span><span class="val" id="m-by-val">–</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="m-by-bar" style="background:#3498db"></div></div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-head"><span>🔵 Mavi–Sarı (varyant)</span><span class="val" id="m-by2-val">–</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="m-by2-bar" style="background:#2980b9"></div></div>
+      </div>
+
+      <div class="metric">
+        <div class="metric-head"><span>🎯 Genel Doğruluk</span><span class="val" id="m-total-val">–</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="m-total-bar" style="background:#6c5ce7"></div></div>
+      </div>
+
+      <button class="btn" id="btn-restart" style="margin-top:8px">Tekrar Dene</button>
+      <p class="note">Bu test tıbbi tanı aracı değildir. Şüpheniz varsa bir göz doktoruna başvurun.</p>
+    </section>
+  </div>
+
+<script>
+/* =========================================================
+   1) YARDIMCILAR
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+const shuffle = (arr) => { for (let i = arr.length - 1; i > 0; i--) { const j = randInt(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+
+/* HSV -> RGB hex */
+function hsvToHex(h, s, v) {
+  h = ((h % 360) + 360) % 360;
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60)       { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else              { r = c; b = x; }
+  const to = (n) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+/* =========================================================
+   2) RENK KÖRLÜĞÜ PALETLERİ
+   ========================================================= */
+const PALETTES = {
+  // 1) KIRMIZI–YEŞİL (Protan/Deutan)
+  rg: {
+    bg: { hMin: 25,  hMax: 55,  sMin: 0.65, sMax: 0.90, vMin: 0.55, vMax: 0.75 },
+    fg: { hMin: 0,   hMax: 15,  sMin: 0.70, sMax: 0.95, vMin: 0.55, vMax: 0.80 },
+  },
+  // 2) KIRMIZI–YEŞİL (varyant)
+  rg2: {
+    bg: { hMin: 70,  hMax: 100, sMin: 0.55, sMax: 0.80, vMin: 0.60, vMax: 0.80 },
+    fg: { hMin: 20,  hMax: 40,  sMin: 0.60, sMax: 0.85, vMin: 0.55, vMax: 0.75 },
+  },
+  // 3) MAVİ–SARI (Tritanopi)
+  by: {
+    bg: { hMin: 195, hMax: 225, sMin: 0.65, sMax: 0.90, vMin: 0.50, vMax: 0.75 },
+    fg: { hMin: 45,  hMax: 65,  sMin: 0.70, sMax: 0.95, vMin: 0.60, vMax: 0.85 },
+  },
+  // 4) MAVİ–SARI (varyant)
+  by2: {
+    bg: { hMin: 170, hMax: 190, sMin: 0.55, sMax: 0.80, vMin: 0.55, vMax: 0.75 },
+    fg: { hMin: 55,  hMax: 75,  sMin: 0.65, sMax: 0.90, vMin: 0.60, vMax: 0.80 },
+  },
+};
+
+function sampleColor(spec) {
+  const h = rand(spec.hMin, spec.hMax);
+  const s = rand(spec.sMin, spec.sMax);
+  const v = rand(spec.vMin, spec.vMax);
+  return hsvToHex(h, s, v);
+}
+
+/* =========================================================
+   3) SVG PLAKA ÜRETİCİ
+   ========================================================= */
+function buildPlate(opts) {
+  const { paletteKey, mode, targetNumber, dots = 520 } = opts;
+  const pal = PALETTES[paletteKey];
+
+  const SIZE = 400;
+  const CX = 200, CY = 200, RADIUS = 195;
+
+  // --- 1) Hedef maskesi ---
+  let isFgAt = () => false;
+  let tapTarget = null;
+
+  if (mode === 'number' && targetNumber) {
+    const cvs = document.createElement('canvas');
+    cvs.width = SIZE; cvs.height = SIZE;
+    const ctx = cvs.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    const text = String(targetNumber);
+    const fontSize = text.length === 1 ? 240 : 190;
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(text, CX, CY + 8);
+
+    const img = ctx.getImageData(0, 0, SIZE, SIZE).data;
+    isFgAt = (x, y) => {
+      const ix = Math.floor(x), iy = Math.floor(y);
+      if (ix < 0 || iy < 0 || ix >= SIZE || iy >= SIZE) return false;
+      return img[(iy * SIZE + ix) * 4] > 128;
+    };
+  } else if (mode === 'tap') {
+    const ang = rand(0, Math.PI * 2);
+    const dist = rand(55, 105);
+    const tx = CX + Math.cos(ang) * dist;
+    const ty = CY + Math.sin(ang) * dist;
+    const tr = rand(38, 52);
+    tapTarget = { x: tx, y: ty, r: tr };
+    isFgAt = (x, y) => {
+      const dx = x - tx, dy = y - ty;
+      return dx * dx + dy * dy <= tr * tr;
+    };
+  }
+
+  // --- 2) Noktaları üret ---
+  let dotsSVG = '';
+  const positions = [];
+  const targetDotCount = dots;
+  let attempts = 0;
+  const maxAttempts = targetDotCount * 6;
+
+  while (positions.length < targetDotCount && attempts < maxAttempts) {
+    attempts++;
+    const ang = rand(0, Math.PI * 2);
+    const r   = Math.sqrt(Math.random()) * (RADIUS - 4);
+    const x   = CX + Math.cos(ang) * r;
+    const y   = CY + Math.sin(ang) * r;
+    let ok = true;
+    for (const p of positions) {
+      const dx = x - p[0], dy = y - p[1];
+      if (dx * dx + dy * dy < 81) { ok = false; break; }
+    }
+    if (ok) positions.push([x, y]);
+  }
+
+  // Arka plan dolgu rengi (plaka zemini)
+  const bgBase = hsvToHex(
+    (pal.bg.hMin + pal.bg.hMax) / 2,
+    (pal.bg.sMin + pal.bg.sMax) / 2,
+    (pal.bg.vMin + pal.bg.vMax) / 2
+  );
+  dotsSVG += `<circle cx="${CX}" cy="${CY}" r="${RADIUS}" fill="${bgBase}"/>`;
+
+  // Noktalar
+  for (const [x, y] of positions) {
+    const fg = isFgAt(x, y);
+    const color = fg ? sampleColor(pal.fg) : sampleColor(pal.bg);
+    const r = rand(6.5, 11);
+    dotsSVG += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${color}"/>`;
+  }
+
+  const clipDefs = `<defs><clipPath id="clip"><circle cx="${CX}" cy="${CY}" r="${RADIUS}"/></clipPath></defs>`;
+  const svgHTML = `${clipDefs}<g clip-path="url(#clip)">${dotsSVG}</g>`;
+
+  return { svgHTML, tapTarget };
+}
+
+/* =========================================================
+   4) TEST AKIŞI
+   ========================================================= */
+const TOTAL_STEPS = 10;
+
+const state = {
+  step: 0,
+  results: [],
+  current: null,
+  startTime: 0,
+  timerInterval: null,
+  completed: false,
+};
+
+function buildStepPlan() {
+  const plan = ['rg', 'rg2', 'by', 'by2', 'rg', 'rg2', 'by', 'by2'];
+  const extras = ['rg', 'rg2', 'by', 'by2'];
+  plan.push(extras[randInt(0, 3)]);
+  plan.push(extras[randInt(0, 3)]);
+  shuffle(plan);
+
+  const modes = [...Array(5).fill('number'), ...Array(5).fill('tap')];
+  shuffle(modes);
+
+  return plan.map((pk, i) => ({ paletteKey: pk, mode: modes[i] }));
+}
+
+let stepPlan = buildStepPlan();
+
+function startTest() {
+  stepPlan = buildStepPlan(); // her testte yeni plan
+  state.step = 0;
+  state.results = [];
+  state.completed = false;
+  state.startTime = Date.now();
+  $('screen-start').classList.remove('active');
+  $('screen-result').classList.remove('active');
+  $('screen-test').classList.add('active');
+  startTimer();
+  renderStep();
+}
+
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - state.startTime) / 1000);
+    $('timer-label').textContent = s + 's';
+  }, 1000);
+  $('timer-label').textContent = '0s';
+}
+
+function renderStep() {
+  const { paletteKey, mode } = stepPlan[state.step];
+  let targetNumber = null;
+
+  if (mode === 'number') {
+    targetNumber = randInt(1, 99);
+  }
+
+  const { svgHTML, tapTarget: tt } = buildPlate({
+    paletteKey, mode, targetNumber,
+    dots: 480 + randInt(0, 120),
+  });
+
+  state.current = { paletteKey, mode, targetNumber, tapTarget: tt };
+
+  // SVG render
+  const svg = $('plate-svg');
+  svg.innerHTML = svgHTML;
+
+  // Header
+  $('step-label').textContent = `Aşama ${state.step + 1}/${TOTAL_STEPS}`;
+  $('progress-fill').style.width = `${(state.step / TOTAL_STEPS) * 100}%`;
+
+  // Arayüz modu
+  const answerRow = $('answer-row');
+  const tapHint = $('tap-hint');
+  const instruction = $('instruction');
+
+  if (mode === 'number') {
+    answerRow.style.display = 'flex';
+    tapHint.style.display = 'none';
+    instruction.textContent = 'Plakadaki sayıyı girin (1–99)';
+    const input = $('answer-input');
+    input.value = '';
+    input.disabled = false;
+    $('btn-submit').disabled = false;
+    setTimeout(() => input.focus(), 100);
+  } else {
+    answerRow.style.display = 'none';
+    tapHint.style.display = 'block';
+    instruction.textContent = 'Farklı renkteki bölgeye dokunun';
+  }
+
+  // Dokunma dinleyicisi
+  svg.onclick = null;
+  if (mode === 'tap') {
+    svg.addEventListener('click', onPlateTap, { once: true });
+  }
+}
+
+function onPlateTap(evt) {
+  if (state.current.mode !== 'tap') return;
+  const svg = $('plate-svg');
+  const rect = svg.getBoundingClientRect();
+  const x = ((evt.clientX - rect.left) / rect.width) * 400;
+  const y = ((evt.clientY - rect.top) / rect.height) * 400;
+
+  const t = state.current.tapTarget;
+  const dx = x - t.x, dy = y - t.y;
+  const hit = dx * dx + dy * dy <= (t.r * 1.4) * (t.r * 1.4);
+
+  recordResult(hit);
+}
+
+function onSubmitNumber() {
+  if (state.current.mode !== 'number') return;
+  const input = $('answer-input');
+  const val = parseInt(input.value, 10);
+  if (isNaN(val) || val < 1 || val > 99) {
+    input.focus();
+    return;
+  }
+  const correct = val === state.current.targetNumber;
+  recordResult(correct);
+}
+
+function recordResult(correct) {
+  const svg = $('plate-svg');
+  svg.onclick = null;
+  svg.removeEventListener('click', onPlateTap);
+
+  state.results.push({
+    paletteKey: state.current.paletteKey,
+    mode: state.current.mode,
+    correct,
+  });
+
+  // Görsel geri bildirim
+  const flash = document.createElement('div');
+  flash.style.cssText = `position:fixed;inset:0;pointer-events:none;background:${correct ? 'rgba(0,206,201,0.18)' : 'rgba(255,118,117,0.20)'};z-index:999;transition:opacity 0.3s;`;
+  document.body.appendChild(flash);
+  setTimeout(() => { flash.style.opacity = '0'; }, 30);
+  setTimeout(() => flash.remove(), 400);
+
+  state.step++;
+  if (state.step >= TOTAL_STEPS) {
+    finishTest();
+  } else {
+    setTimeout(renderStep, 350);
+  }
+}
+
+function finishTest() {
+  clearInterval(state.timerInterval);
+  state.completed = true;
+  $('progress-fill').style.width = '100%';
+  $('screen-test').classList.remove('active');
+  $('screen-result').classList.add('active');
+  renderResult();
+}
+
+/* =========================================================
+   5) SONUÇ ANALİZİ
+   ========================================================= */
+function renderResult() {
+  const stats = {
+    rg:  { correct: 0, total: 0 },
+    rg2: { correct: 0, total: 0 },
+    by:  { correct: 0, total: 0 },
+    by2: { correct: 0, total: 0 },
+  };
+  let totalCorrect = 0;
+
+  for (const r of state.results) {
+    if (!stats[r.paletteKey]) continue;
+    stats[r.paletteKey].total++;
+    if (r.correct) {
+      stats[r.paletteKey].correct++;
+      totalCorrect++;
+    }
+  }
+
+  const pct = (s) => s.total === 0 ? 0 : Math.round((s.correct / s.total) * 100);
+
+  const rgPct  = pct(stats.rg);
+  const rg2Pct = pct(stats.rg2);
+  const byPct  = pct(stats.by);
+  const by2Pct = pct(stats.by2);
+  const totalPct = Math.round((totalCorrect / TOTAL_STEPS) * 100);
+
+  const setBar = (id, val) => { $(id).style.width = val + '%'; };
+  const setVal = (id, val) => { $(id).textContent = val + '%'; };
+
+  setVal('m-rg-val', rgPct);    setBar('m-rg-bar', rgPct);
+  setVal('m-rg2-val', rg2Pct);  setBar('m-rg2-bar', rg2Pct);
+  setVal('m-by-val', byPct);    setBar('m-by-bar', byPct);
+  setVal('m-by2-val', by2Pct);  setBar('m-by2-bar', by2Pct);
+  setVal('m-total-val', totalPct); setBar('m-total-bar', totalPct);
+
+  // Kırmızı-yeşil ve mavi-sarı ortalama başarıları
+  const rgAvg = Math.round((rgPct + rg2Pct) / 2);
+  const byAvg = Math.round((byPct + by2Pct) / 2);
+
+  const verdict = $('verdict');
+  verdict.className = 'verdict';
+
+  const suspects = [];
+  if (rgAvg < 50) suspects.push('kırmızı–yeşil');
+  if (byAvg < 50) suspects.push('mavi–sarı');
+
+  if (totalPct >= 80 && suspects.length === 0) {
+    verdict.classList.add('ok');
+    verdict.innerHTML = `✅ Görme sonuçlarınız normal aralıkta görünüyor.<br><small>Toplam doğruluk: ${totalPct}%</small>`;
+  } else if (suspects.length > 0) {
+    verdict.classList.add('bad');
+    verdict.innerHTML = `⚠️ ${suspects.join(' ve ')} tipinde renk ayrım güçlüğü saptandı.<br><small>Toplam doğruluk: ${totalPct}%</small>`;
+  } else {
+    verdict.classList.add('warn');
+    verdict.innerHTML = `🟡 Sonuçlar sınırda. Bazı aşamalarda zorlanma görüldü.<br><small>Toplam doğruluk: ${totalPct}%</small>`;
+  }
+}
+
+/* =========================================================
+   6) OLAY BAĞLAMA
+   ========================================================= */
+$('btn-start').addEventListener('click', startTest);
+$('btn-submit').addEventListener('click', onSubmitNumber);
+$('answer-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') onSubmitNumber();
+});
+$('btn-restart').addEventListener('click', () => {
+  $('screen-result').classList.remove('active');
+  $('screen-start').classList.add('active');
+});
+
+/* =========================================================
+   7) PWA KAYIT
+   ========================================================= */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+/* Pinch-zoom engelle (iOS Safari için ek önlem) */
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+</script>
+</body>
+</html>
